@@ -208,6 +208,27 @@ font-size:13px;
 height:240px;
 }
 </style>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBwQIZ4_VwOYJjGPXBIQ2cBuWa53v8xCUk",
+  authDomain: "zurnalas-app.firebaseapp.com",
+  projectId: "zurnalas-app",
+  storageBucket: "zurnalas-app.firebasestorage.app",
+  messagingSenderId: "721221585239",
+  appId: "1:721221585239:web:7ad195906ac6788f381612",
+  measurementId: "G-28EFVE6GTF"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.firebaseDB = db;
+</script>
+
 </head>
 <body>
 
