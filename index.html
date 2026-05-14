@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Trading Journal</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+html,body{
+overflow-x:hidden;
+overscroll-behavior:none;
+}
+
+body{
+font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+background:#f3f4f6;
+display:flex;
+justify-content:center;
+padding:18px;
+padding-bottom:100px;
+color:#111827;
+}
+
+.app{
+width:100%;
+max-width:430px;
+}
+
+.page{display:none}
+.active{display:block}
+
+h1{
+font-size:32px;
+margin-bottom:18px;
+}
+
+.card{
+background:white;
+border-radius:24px;
+padding:18px;
+margin-bottom:16px;
+box-shadow:0 4px 18px rgba(0,0,0,.05);
+}
+
+.stats{
+display:grid;
+grid-template-columns:1fr 1fr 1fr;
+gap:12px;
+margin-bottom:16px;
+}
+
+.stat-title{
+font-size:13px;
+opacity:.55;
+margin-bottom:8px;
+}
+
+.stat-value{
+font-size:23px;
+font-weight:700;
+}
+
+input,textarea{
+width:100%;
+padding:16px;
+border-radius:18px;
+border:1px solid #e5e7eb;
+background:#fafafa;
+font-size:16px;
+margin-top:12px;
+}
+
+#date{
+height:56px;
+}
+
+textarea{
+min-height:100px;
+resize:none;
+}
+
+.save-btn{
+width:100%;
+padding:16px;
+border:none;
+border-radius:18px;
+background:#374151;
+color:white;
+font-size:16px;
+font-weight:700;
+margin-top:14px;
+}
+
+.calendar-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:14px;
+}
+
+.arrow{
+background:none;
+border:none;
+font-size:24px;
+}
+
+.month{
+font-size:22px;
+font-weight:700;
+}
+
+.weekdays,
+.calendar{
+display:grid;
+grid-template-columns:repeat(7,1fr);
+gap:8px;
+}
+
+.weekdays div{
+text-align:center;
+font-size:12px;
+font-weight:700;
+opacity:.5;
+}
+
+.day{
+aspect-ratio:1/1;
+border-radius:16px;
+padding:6px;
+display:flex;
+flex-direction:column;
+justify-content:space-between;
+background:white;
+box-shadow:0 2px 6px rgba(0,0,0,.03);
+}
+
+.green-bg{
+background:#e8f8ec;
+}
+
+.red-bg{
+background:#ffe8f0;
+}
+
+.day-number{
+font-size:14px;
+font-weight:700;
+}
+
+.day-profit{
+font-size:11px;
+font-weight:700;
+}
+
+.trade{
+position:relative;
+background:white;
+padding:16px;
+border-radius:20px;
+margin-bottom:12px;
+box-shadow:0 3px 10px rgba(0,0,0,.04);
+}
+
+.delete{
+position:absolute;
+top:14px;
+right:14px;
+background:none;
+border:none;
+font-size:18px;
+color:#ff2d55;
+}
+
+.green{
+color:#16a34a;
+font-weight:700;
+}
+
+.red{
+color:#c2185b;
+font-weight:700;
+}
+
+.bottom{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+height:76px;
+background:white;
+display:flex;
+justify-content:space-around;
+align-items:center;
+box-shadow:0 -3px 16px rgba(0,0,0,.06);
+}
+
+.nav{
+background:none;
+border:none;
+color:#666;
+font-size:13px;
+}
+
+.chart-box{
+height:240px;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<div id="home" class="page active">
+
+<h1>Žurnalas</h1>
+
+<div class="stats">
+
+<div class="card">
+<div class="stat-title">Balansas</div>
+<div class="stat-value" id="balance">$0</div>
+</div>
+
+<div class="card">
+<div class="stat-title">Growth</div>
+<div class="stat-value" id="growth">0%</div>
+</div>
+
+<div class="card">
+<div class="stat-title">Winrate</div>
+<div class="stat-value" id="winrate">0%</div>
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="calendar-header">
+<button class="arrow" onclick="changeMonth(-1)">‹</button>
+<div id="monthTitle" class="month"></div>
+<button class="arrow" onclick="changeMonth(1)">›</button>
+</div>
+
+<div class="weekdays">
+<div>P</div>
+<div>A</div>
+<div>T</div>
+<div>K</div>
+<div>Pn</div>
+<div>Š</div>
+<div>S</div>
+</div>
+
+<div id="calendar" class="calendar"></div>
+
+</div>
+
+<div class="card">
+<div class="stat-title">Balanso grafikas</div>
+
+<div class="chart-box">
+<canvas id="equityChart"></canvas>
+</div>
+
+</div>
+
+<div class="card">
+<div class="stat-title">Depozitas ($)</div>
+<input id="depositInput" placeholder="Įvesk depozitą">
+<button class="save-btn" onclick="saveDeposit()">Išsaugoti</button>
+</div>
+
+</div>
+
+<div id="add" class="page">
+
+<h1>Pridėti sandorį</h1>
+
+<div class="card">
+
+<input list="assets" id="asset" placeholder="Asset">
+<datalist id="assets"></datalist>
+
+<input id="profitInput" placeholder="Pelnas / Nuostolis ($)">
+
+<input type="text" id="date" placeholder="dd/mm/yy">
+
+<textarea id="notes" placeholder="Pastabos"></textarea>
+
+<button class="save-btn" onclick="addTrade()">Išsaugoti</button>
+
+</div>
+
+</div>
+
+<div id="history" class="page">
+
+<h1>History</h1>
+
+<div id="historyList"></div>
+
+</div>
+
+<div class="bottom">
+<button class="nav" onclick="showPage('home')">🏠 Home</button>
+<button class="nav" onclick="showPage('add')">➕ Add</button>
+<button class="nav" onclick="showPage('history')">📊 History</button>
+</div>
+
+</div>
+
+<script>
+
+let trades = JSON.parse(localStorage.getItem('trades') || '[]');
+let deposits = JSON.parse(localStorage.getItem('deposits') || '[]');
+
+const now = new Date();
+
+let currentMonth = now.getMonth();
+let currentYear = now.getFullYear();
+
+
+if(deposits.length===0){
+deposits.push({
+amount:150,
+date:'01/05/25'
+});
+localStorage.setItem('deposits', JSON.stringify(deposits));
+}
+
+const months = [
+'Sausis','Vasaris','Kovas','Balandis',
+'Gegužė','Birželis','Liepa','Rugpjūtis',
+'Rugsėjis','Spalis','Lapkritis','Gruodis'
+];
+
+function todayFormatted(){
+const d = new Date();
+return String(d.getDate()).padStart(2,'0') + '/' +
+String(d.getMonth()+1).padStart(2,'0') + '/' +
+String(d.getFullYear()).slice(-2);
+}
+
+document.getElementById('date').value = todayFormatted();
+
+function showPage(id){
+document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+document.getElementById(id).classList.add('active');
+
+if(id==='add'){
+document.getElementById('asset').value='';
+document.getElementById('profitInput').value='';
+document.getElementById('notes').value='';
+document.getElementById('date').value = todayFormatted();
+}
+}
+
+function saveDeposit(){
+
+const value = parseFloat(document.getElementById('depositInput').value.replace(',','.'));
+
+if(isNaN(value)) return;
+
+const now = new Date();
+
+const today =
+String(now.getDate()).padStart(2,'0') + '/' +
+String(now.getMonth()+1).padStart(2,'0') + '/' +
+String(now.getFullYear()).slice(-2);
+
+deposits.push({
+amount:value,
+date:today
+});
+
+localStorage.setItem('deposits', JSON.stringify(deposits));
+
+document.getElementById('depositInput').value='';
+
+render();
+
+}
+
+function addTrade(){
+
+const value = parseFloat(document.getElementById('profitInput').value.replace(',','.'));
+
+if(isNaN(value)) return;
+
+const trade = {
+id: Date.now(),
+asset: document.getElementById('asset').value,
+profit: value,
+date: document.getElementById('date').value,
+notes: document.getElementById('notes').value
+};
+
+trades.push(trade);
+
+localStorage.setItem('trades', JSON.stringify(trades));
+
+render();
+
+showPage('home');
+}
+
+function deleteTrade(id){
+trades = trades.filter(t=>t.id !== id);
+localStorage.setItem('trades', JSON.stringify(trades));
+render();
+}
+
+function render(){
+
+const totalDeposits = deposits.reduce((a,b)=>a+b.amount,0);
+
+let total = totalDeposits;
+let wins = 0;
+
+const assets = new Set();
+
+const history = document.getElementById('historyList');
+
+history.innerHTML = '';
+
+const sorted = [...trades].sort((a,b)=>{
+const pa=a.date.split('/');
+const pb=b.date.split('/');
+const da = new Date('20'+pa[2], pa[1]-1, pa[0]);
+const db = new Date('20'+pb[2], pb[1]-1, pb[0]);
+return db-da;
+});
+
+const daily = {};
+
+sorted.forEach(t=>{
+
+total += t.profit;
+
+if(t.profit > 0) wins++;
+
+assets.add(t.asset);
+
+const parts = t.date.split('/');
+const dateKey = '20'+parts[2]+'-'+parts[1]+'-'+parts[0];
+
+if(!daily[dateKey]) daily[dateKey] = 0;
+
+daily[dateKey] += t.profit;
+
+const div = document.createElement('div');
+
+div.className = 'trade';
+
+div.innerHTML = `
+<button class="delete" onclick="deleteTrade(${t.id})">✕</button>
+
+<strong>${t.asset}</strong>
+
+<br><br>
+
+<span class="${t.profit >=0 ? 'green':'red'}">
+${t.profit >=0 ? '+' : ''}$${t.profit.toFixed(2)}
+</span>
+
+<br><br>
+
+${t.date}
+
+<br>
+
+<small>${t.notes}</small>
+`;
+
+history.appendChild(div);
+
+});
+
+document.getElementById('balance').innerText =
+'$' + total.toFixed(2);
+
+const totalProfit = trades.reduce((a,b)=>a+b.profit,0);
+
+const growth =
+totalDeposits > 0
+? ((totalProfit/totalDeposits)*100)
+: 0;
+
+document.getElementById('growth').innerText =
+(growth >=0 ? '+' : '') + growth.toFixed(1) + '%';
+
+document.getElementById('winrate').innerText =
+trades.length
+? ((wins/trades.length)*100).toFixed(0) + '%'
+: '0%';
+
+const dl = document.getElementById('assets');
+
+dl.innerHTML='';
+
+assets.forEach(a=>{
+const option = document.createElement('option');
+option.value = a;
+dl.appendChild(option);
+});
+
+drawCalendar(daily);
+drawChart();
+}
+
+function changeMonth(dir){
+
+currentMonth += dir;
+
+if(currentMonth < 0){
+currentMonth = 11;
+currentYear--;
+}
+
+if(currentMonth > 11){
+currentMonth = 0;
+currentYear++;
+}
+
+render();
+}
+
+function drawCalendar(daily){
+
+const calendar = document.getElementById('calendar');
+
+calendar.innerHTML='';
+
+document.getElementById('monthTitle').innerText =
+months[currentMonth] + ' ' + currentYear;
+
+let firstDay = new Date(currentYear,currentMonth,1).getDay();
+
+if(firstDay === 0) firstDay = 7;
+
+firstDay--;
+
+const daysInMonth =
+new Date(currentYear,currentMonth+1,0).getDate();
+
+for(let i=0;i<firstDay;i++){
+const empty = document.createElement('div');
+calendar.appendChild(empty);
+}
+
+for(let d=1; d<=daysInMonth; d++){
+
+const date =
+`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+
+const value = daily[date];
+
+const div = document.createElement('div');
+
+div.className = 'day';
+
+if(value > 0) div.classList.add('green-bg');
+if(value < 0) div.classList.add('red-bg');
+
+div.innerHTML = `
+<div class="day-number">${d}</div>
+
+<div class="day-profit">
+${value !== undefined
+? (value >= 0 ? '+' : '') + '$' + value.toFixed(0)
+: ''}
+</div>
+`;
+
+calendar.appendChild(div);
+}
+}
+
+
+let chart;
+
+function parseDate(str){
+const p = str.split('/');
+return new Date('20'+p[2], p[1]-1, p[0]);
+}
+
+function drawChart(){
+
+const ctx = document.getElementById('equityChart');
+
+if(chart){
+chart.destroy();
+}
+
+const events = [];
+
+deposits.forEach(d=>{
+events.push({
+date:d.date,
+amount:d.amount
+});
+});
+
+trades.forEach(t=>{
+events.push({
+date:t.date,
+amount:t.profit
+});
+});
+
+events.sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+
+let balance = 0;
+
+const labels = [];
+const data = [];
+
+events.forEach(e=>{
+
+balance += e.amount;
+
+labels.push(e.date);
+data.push(balance);
+
+});
+
+chart = new Chart(ctx,{
+type:'line',
+data:{
+labels:labels,
+datasets:[{
+data:data,
+borderColor:'#374151',
+backgroundColor:'rgba(55,65,81,0.08)',
+fill:true,
+tension:0.4,
+borderWidth:3,
+pointRadius:3
+}]
+},
+options:{
+responsive:true,
+maintainAspectRatio:false,
+plugins:{
+legend:{
+display:false
+}
+},
+scales:{
+x:{
+ticks:{
+color:'#6b7280'
+},
+grid:{
+display:false
+}
+},
+y:{
+ticks:{
+color:'#6b7280',
+callback:function(value){
+return '$'+value;
+}
+},
+grid:{
+color:'rgba(0,0,0,0.05)'
+}
+}
+}
+}
+});
+
+}
+
+
+render();
+
+</script>
+
+</body>
+</html>
