@@ -211,7 +211,14 @@ height:240px;
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+getFirestore,
+collection,
+addDoc,
+getDocs,
+deleteDoc,
+doc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBwQIZ4_VwOYJjGPXBIQ2cBuWa53v8xCUk",
@@ -226,7 +233,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-window.firebaseDB = db;
+window.db = db;
+window.fb = {
+collection,
+addDoc,
+getDocs,
+deleteDoc,
+doc
+};
 </script>
 
 </head>
@@ -401,6 +415,43 @@ localStorage.setItem('deposits', JSON.stringify(deposits));
 
 document.getElementById('depositInput').value='';
 
+
+async function loadFirebaseData(){
+
+if(!window.fb) return;
+
+try{
+
+const tradesSnapshot = await fb.getDocs(fb.collection(db,'trades'));
+const depositsSnapshot = await fb.getDocs(fb.collection(db,'deposits'));
+
+if(tradesSnapshot.size > 0){
+trades = [];
+tradesSnapshot.forEach((d)=>{
+trades.push(d.data());
+});
+localStorage.setItem('trades', JSON.stringify(trades));
+}
+
+if(depositsSnapshot.size > 0){
+deposits = [];
+depositsSnapshot.forEach((d)=>{
+deposits.push(d.data());
+});
+localStorage.setItem('deposits', JSON.stringify(deposits));
+}
+
+render();
+
+}catch(e){
+console.log(e);
+}
+
+}
+
+loadFirebaseData();
+
+
 render();
 
 }
@@ -422,6 +473,10 @@ notes: document.getElementById('notes').value
 trades.push(trade);
 
 localStorage.setItem('trades', JSON.stringify(trades));
+
+if(window.fb){
+fb.addDoc(fb.collection(db,'trades'), trade);
+}
 
 render();
 
