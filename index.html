@@ -211,14 +211,7 @@ height:240px;
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-getFirestore,
-collection,
-addDoc,
-getDocs,
-deleteDoc,
-doc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBwQIZ4_VwOYJjGPXBIQ2cBuWa53v8xCUk",
@@ -233,14 +226,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-window.db = db;
-window.fb = {
-collection,
-addDoc,
-getDocs,
-deleteDoc,
-doc
-};
+window.firebaseDB = db;
 </script>
 
 </head>
@@ -381,6 +367,67 @@ String(d.getFullYear()).slice(-2);
 
 document.getElementById('date').value = todayFormatted();
 
+async function migrateLocalDataToFirebase(){
+
+if(localStorage.getItem('firebaseMigrated')) return;
+
+if(!window.fb) return;
+
+try{
+
+for(const trade of trades){
+await fb.addDoc(fb.collection(db,'trades'), trade);
+}
+
+for(const dep of deposits){
+await fb.addDoc(fb.collection(db,'deposits'), dep);
+}
+
+localStorage.setItem('firebaseMigrated','yes');
+
+console.log('Migration done');
+
+}catch(e){
+console.log(e);
+}
+
+}
+
+async function loadFirebaseData(){
+
+if(!window.fb) return;
+
+try{
+
+const tradesSnapshot = await fb.getDocs(fb.collection(db,'trades'));
+const depositsSnapshot = await fb.getDocs(fb.collection(db,'deposits'));
+
+trades = [];
+deposits = [];
+
+tradesSnapshot.forEach((d)=>{
+trades.push(d.data());
+});
+
+depositsSnapshot.forEach((d)=>{
+deposits.push(d.data());
+});
+
+render();
+
+}catch(e){
+console.log(e);
+}
+
+}
+
+setTimeout(async ()=>{
+await migrateLocalDataToFirebase();
+await loadFirebaseData();
+},1000);
+
+
+
 function showPage(id){
 document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
 document.getElementById(id).classList.add('active');
@@ -390,6 +437,67 @@ document.getElementById('asset').value='';
 document.getElementById('profitInput').value='';
 document.getElementById('notes').value='';
 document.getElementById('date').value = todayFormatted();
+
+async function migrateLocalDataToFirebase(){
+
+if(localStorage.getItem('firebaseMigrated')) return;
+
+if(!window.fb) return;
+
+try{
+
+for(const trade of trades){
+await fb.addDoc(fb.collection(db,'trades'), trade);
+}
+
+for(const dep of deposits){
+await fb.addDoc(fb.collection(db,'deposits'), dep);
+}
+
+localStorage.setItem('firebaseMigrated','yes');
+
+console.log('Migration done');
+
+}catch(e){
+console.log(e);
+}
+
+}
+
+async function loadFirebaseData(){
+
+if(!window.fb) return;
+
+try{
+
+const tradesSnapshot = await fb.getDocs(fb.collection(db,'trades'));
+const depositsSnapshot = await fb.getDocs(fb.collection(db,'deposits'));
+
+trades = [];
+deposits = [];
+
+tradesSnapshot.forEach((d)=>{
+trades.push(d.data());
+});
+
+depositsSnapshot.forEach((d)=>{
+deposits.push(d.data());
+});
+
+render();
+
+}catch(e){
+console.log(e);
+}
+
+}
+
+setTimeout(async ()=>{
+await migrateLocalDataToFirebase();
+await loadFirebaseData();
+},1000);
+
+
 }
 }
 
@@ -415,43 +523,6 @@ localStorage.setItem('deposits', JSON.stringify(deposits));
 
 document.getElementById('depositInput').value='';
 
-
-async function loadFirebaseData(){
-
-if(!window.fb) return;
-
-try{
-
-const tradesSnapshot = await fb.getDocs(fb.collection(db,'trades'));
-const depositsSnapshot = await fb.getDocs(fb.collection(db,'deposits'));
-
-if(tradesSnapshot.size > 0){
-trades = [];
-tradesSnapshot.forEach((d)=>{
-trades.push(d.data());
-});
-localStorage.setItem('trades', JSON.stringify(trades));
-}
-
-if(depositsSnapshot.size > 0){
-deposits = [];
-depositsSnapshot.forEach((d)=>{
-deposits.push(d.data());
-});
-localStorage.setItem('deposits', JSON.stringify(deposits));
-}
-
-render();
-
-}catch(e){
-console.log(e);
-}
-
-}
-
-loadFirebaseData();
-
-
 render();
 
 }
@@ -473,10 +544,6 @@ notes: document.getElementById('notes').value
 trades.push(trade);
 
 localStorage.setItem('trades', JSON.stringify(trades));
-
-if(window.fb){
-fb.addDoc(fb.collection(db,'trades'), trade);
-}
 
 render();
 
