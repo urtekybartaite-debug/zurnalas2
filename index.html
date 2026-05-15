@@ -3,16 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Trading Journal</title>
+<title>Trading Journal Cloud</title>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-
-html,body{
-overflow-x:hidden;
-overscroll-behavior:none;
-}
 
 body{
 font-family:-apple-system,BlinkMacSystemFont,sans-serif;
@@ -73,10 +69,6 @@ font-size:16px;
 margin-top:12px;
 }
 
-#date{
-height:56px;
-}
-
 textarea{
 min-height:100px;
 resize:none;
@@ -92,6 +84,41 @@ color:white;
 font-size:16px;
 font-weight:700;
 margin-top:14px;
+}
+
+.trade{
+background:white;
+padding:16px;
+border-radius:20px;
+margin-bottom:12px;
+box-shadow:0 3px 10px rgba(0,0,0,.04);
+}
+
+.green{color:#16a34a;font-weight:700}
+.red{color:#c2185b;font-weight:700}
+
+.bottom{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+height:76px;
+background:white;
+display:flex;
+justify-content:space-around;
+align-items:center;
+box-shadow:0 -3px 16px rgba(0,0,0,.06);
+}
+
+.nav{
+background:none;
+border:none;
+color:#666;
+font-size:13px;
+}
+
+.chart-box{
+height:240px;
 }
 
 .calendar-header{
@@ -154,70 +181,21 @@ font-weight:700;
 font-size:11px;
 font-weight:700;
 }
-
-.trade{
-position:relative;
-background:white;
-padding:16px;
-border-radius:20px;
-margin-bottom:12px;
-box-shadow:0 3px 10px rgba(0,0,0,.04);
-}
-
-.delete{
-position:absolute;
-top:14px;
-right:14px;
-background:none;
-border:none;
-font-size:18px;
-color:#ff2d55;
-}
-
-.green{
-color:#16a34a;
-font-weight:700;
-}
-
-.red{
-color:#c2185b;
-font-weight:700;
-}
-
-.bottom{
-position:fixed;
-bottom:0;
-left:0;
-right:0;
-height:76px;
-background:white;
-display:flex;
-justify-content:space-around;
-align-items:center;
-box-shadow:0 -3px 16px rgba(0,0,0,.06);
-}
-
-.nav{
-background:none;
-border:none;
-color:#666;
-font-size:13px;
-}
-
-.chart-box{
-height:240px;
-}
 </style>
 
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
 import {
 getFirestore,
 collection,
 addDoc,
 getDocs,
 deleteDoc,
-doc
+doc,
+orderBy,
+query
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -233,14 +211,347 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-window.db = db;
-window.fb = {
-collection,
-addDoc,
-getDocs,
-deleteDoc,
-doc
+let trades = [];
+let deposits = [];
+
+let chart;
+
+
+const now = new Date();
+
+let currentMonth = now.getMonth();
+let currentYear = now.getFullYear();
+
+const months = [
+'Sausis','Vasaris','Kovas','Balandis',
+'Gegužė','Birželis','Liepa','Rugpjūtis',
+'Rugsėjis','Spalis','Lapkritis','Gruodis'
+];
+
+function todayFormatted(){
+const d = new Date();
+return String(d.getDate()).padStart(2,'0') + '/' +
+String(d.getMonth()+1).padStart(2,'0') + '/' +
+String(d.getFullYear()).slice(-2);
+}
+
+window.showPage = function(id){
+document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+document.getElementById(id).classList.add('active');
+}
+
+window.addTrade = async function(){
+
+const value = parseFloat(document.getElementById('profitInput').value.replace(',','.'));
+
+if(isNaN(value)) return;
+
+const trade = {
+asset: document.getElementById('asset').value,
+profit: value,
+date: document.getElementById('date').value,
+notes: document.getElementById('notes').value,
+createdAt: Date.now()
 };
+
+await addDoc(collection(db,'trades'), trade);
+
+await loadData();
+
+document.getElementById('asset').value='';
+document.getElementById('profitInput').value='';
+document.getElementById('notes').value='';
+
+showPage('home');
+}
+
+window.saveDeposit = async function(){
+
+const value = parseFloat(document.getElementById('depositInput').value.replace(',','.'));
+
+if(isNaN(value)) return;
+
+const deposit = {
+amount:value,
+date:todayFormatted(),
+createdAt: Date.now()
+};
+
+await addDoc(collection(db,'deposits'), deposit);
+
+await loadData();
+
+document.getElementById('depositInput').value='';
+}
+
+function parseDate(str){
+const p = str.split('/');
+return new Date('20'+p[2], p[1]-1, p[0]);
+}
+
+async function loadData(){
+
+trades = [];
+deposits = [];
+
+const tradeQuery = query(collection(db,'trades'), orderBy('createdAt','desc'));
+const depositQuery = query(collection(db,'deposits'));
+
+const tradeSnapshot = await getDocs(tradeQuery);
+const depositSnapshot = await getDocs(depositQuery);
+
+tradeSnapshot.forEach(doc=>{
+trades.push({
+...doc.data(),
+docId: doc.id
+});
+});
+
+depositSnapshot.forEach(doc=>{
+deposits.push(doc.data());
+});
+
+if(deposits.length===0){
+
+const firstDeposit = {
+amount:150,
+date:'01/05/25',
+createdAt: Date.now()
+};
+
+await addDoc(collection(db,'deposits'), firstDeposit);
+
+deposits.push(firstDeposit);
+}
+
+render();
+}
+
+
+window.deleteTrade = async function(id){
+
+await deleteDoc(doc(db,'trades',id));
+
+await loadData();
+
+}
+
+function render(){
+
+const totalDeposits = deposits.reduce((a,b)=>a+b.amount,0);
+
+let total = totalDeposits;
+let wins = 0;
+
+const history = document.getElementById('historyList');
+history.innerHTML='';
+
+trades.forEach(t=>{
+
+total += t.profit;
+
+if(t.profit > 0) wins++;
+
+const div = document.createElement('div');
+
+div.className='trade';
+
+div.innerHTML=`
+<div style="display:flex;justify-content:space-between;align-items:center;">
+<strong>${t.asset}</strong>
+<button onclick="deleteTrade('${t.docId}')" style="border:none;background:none;color:#ff2d55;font-size:18px;">✕</button>
+</div>
+<br>
+<span class="${t.profit >=0 ? 'green':'red'}">
+${t.profit >=0 ? '+' : ''}$${t.profit.toFixed(2)}
+</span>
+<br><br>
+${t.date}
+<br>
+<small>${t.notes}</small>
+`;
+
+history.appendChild(div);
+
+});
+
+document.getElementById('balance').innerText =
+'$'+total.toFixed(2);
+
+const totalProfit = trades.reduce((a,b)=>a+b.profit,0);
+
+const growth =
+totalDeposits > 0
+? ((totalProfit/totalDeposits)*100)
+: 0;
+
+document.getElementById('growth').innerText =
+(growth >=0 ? '+' : '') + growth.toFixed(1) + '%';
+
+document.getElementById('winrate').innerText =
+trades.length
+? ((wins/trades.length)*100).toFixed(0) + '%'
+: '0%';
+
+
+const daily = {};
+
+trades.forEach(t=>{
+
+const parts = t.date.split('/');
+const dateKey = '20'+parts[2]+'-'+parts[1]+'-'+parts[0];
+
+if(!daily[dateKey]) daily[dateKey] = 0;
+
+daily[dateKey] += t.profit;
+
+});
+
+drawCalendar(daily);
+
+drawChart();
+
+}
+
+
+function changeMonth(dir){
+
+currentMonth += dir;
+
+if(currentMonth < 0){
+currentMonth = 11;
+currentYear--;
+}
+
+if(currentMonth > 11){
+currentMonth = 0;
+currentYear++;
+}
+
+render();
+}
+
+function drawCalendar(daily){
+
+const calendar = document.getElementById('calendar');
+
+calendar.innerHTML='';
+
+document.getElementById('monthTitle').innerText =
+months[currentMonth] + ' ' + currentYear;
+
+let firstDay = new Date(currentYear,currentMonth,1).getDay();
+
+if(firstDay === 0) firstDay = 7;
+
+firstDay--;
+
+const daysInMonth =
+new Date(currentYear,currentMonth+1,0).getDate();
+
+for(let i=0;i<firstDay;i++){
+const empty = document.createElement('div');
+calendar.appendChild(empty);
+}
+
+for(let d=1; d<=daysInMonth; d++){
+
+const date =
+`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+
+const value = daily[date];
+
+const div = document.createElement('div');
+
+div.className = 'day';
+
+if(value > 0) div.classList.add('green-bg');
+if(value < 0) div.classList.add('red-bg');
+
+div.innerHTML = `
+<div class="day-number">${d}</div>
+
+<div class="day-profit">
+${value !== undefined
+? (value >= 0 ? '+' : '') + '$' + value.toFixed(0)
+: ''}
+</div>
+`;
+
+calendar.appendChild(div);
+}
+}
+
+
+function drawChart(){
+
+const ctx = document.getElementById('equityChart');
+
+if(chart){
+chart.destroy();
+}
+
+const events = [];
+
+deposits.forEach(d=>{
+events.push({
+date:d.date,
+amount:d.amount
+});
+});
+
+trades.forEach(t=>{
+events.push({
+date:t.date,
+amount:t.profit
+});
+});
+
+events.sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+
+let balance = 0;
+
+const labels = [];
+const data = [];
+
+events.forEach(e=>{
+balance += e.amount;
+labels.push(e.date);
+data.push(balance);
+});
+
+chart = new Chart(ctx,{
+type:'line',
+data:{
+labels:labels,
+datasets:[{
+data:data,
+borderColor:'#374151',
+backgroundColor:'rgba(55,65,81,0.08)',
+fill:true,
+tension:0.4,
+borderWidth:3
+}]
+},
+options:{
+responsive:true,
+maintainAspectRatio:false,
+plugins:{
+legend:{display:false}
+}
+}
+});
+
+}
+
+window.onload = async ()=>{
+
+document.getElementById('date').value = todayFormatted();
+
+await loadData();
+
+}
+
 </script>
 
 </head>
@@ -316,8 +627,7 @@ doc
 
 <div class="card">
 
-<input list="assets" id="asset" placeholder="Asset">
-<datalist id="assets"></datalist>
+<input id="asset" placeholder="Asset">
 
 <input id="profitInput" placeholder="Pelnas / Nuostolis ($)">
 
@@ -346,425 +656,6 @@ doc
 </div>
 
 </div>
-
-<script>
-
-let trades = [];
-let deposits = [];
-
-const now = new Date();
-
-let currentMonth = now.getMonth();
-let currentYear = now.getFullYear();
-
-
-
-
-const months = [
-'Sausis','Vasaris','Kovas','Balandis',
-'Gegužė','Birželis','Liepa','Rugpjūtis',
-'Rugsėjis','Spalis','Lapkritis','Gruodis'
-];
-
-function todayFormatted(){
-const d = new Date();
-return String(d.getDate()).padStart(2,'0') + '/' +
-String(d.getMonth()+1).padStart(2,'0') + '/' +
-String(d.getFullYear()).slice(-2);
-}
-
-document.getElementById('date').value = todayFormatted();
-
-function showPage(id){
-document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-document.getElementById(id).classList.add('active');
-
-if(id==='add'){
-document.getElementById('asset').value='';
-document.getElementById('profitInput').value='';
-document.getElementById('notes').value='';
-document.getElementById('date').value = todayFormatted();
-}
-}
-
-async function saveDeposit(){
-
-const value = parseFloat(document.getElementById('depositInput').value.replace(',','.'));
-
-if(isNaN(value)) return;
-
-const now = new Date();
-
-const today =
-String(now.getDate()).padStart(2,'0') + '/' +
-String(now.getMonth()+1).padStart(2,'0') + '/' +
-String(now.getFullYear()).slice(-2);
-
-const depositData = {
-amount:value,
-date:today
-};
-
-deposits.push(depositData);
-
-await fb.addDoc(fb.collection(db,'deposits'), depositData);
-
-
-
-document.getElementById('depositInput').value='';
-
-
-async function loadCloudData(){
-
-try{
-
-const tradesSnapshot = await fb.getDocs(fb.collection(db,'trades'));
-const depositsSnapshot = await fb.getDocs(fb.collection(db,'deposits'));
-
-trades = [];
-deposits = [];
-
-tradesSnapshot.forEach((d)=>{
-
-trades.push({
-...d.data(),
-docId:d.id
-});
-
-});
-
-depositsSnapshot.forEach((d)=>{
-deposits.push(d.data());
-});
-
-if(deposits.length===0){
-
-const firstDeposit = {
-amount:150,
-date:'01/05/25'
-};
-
-await fb.addDoc(fb.collection(db,'deposits'), firstDeposit);
-
-deposits.push(firstDeposit);
-
-}
-
-render();
-
-}catch(e){
-console.log(e);
-}
-
-}
-
-window.addEventListener('load', ()=>{
-setTimeout(loadCloudData,500);
-});
-
-render();
-
-}
-
-async function addTrade(){
-
-const value = parseFloat(document.getElementById('profitInput').value.replace(',','.'));
-
-if(isNaN(value)) return;
-
-const trade = {
-id: Date.now(),
-asset: document.getElementById('asset').value,
-profit: value,
-date: document.getElementById('date').value,
-notes: document.getElementById('notes').value
-};
-
-trades.push(trade);
-
-await fb.addDoc(fb.collection(db,'trades'), trade);
-
-
-
-render();
-
-showPage('home');
-}
-
-async function deleteTrade(id){
-
-await fb.deleteDoc(fb.doc(db,'trades',id));
-
-await loadCloudData();
-
-}
-
-function render(){
-
-const totalDeposits = deposits.reduce((a,b)=>a+b.amount,0);
-
-let total = totalDeposits;
-let wins = 0;
-
-const assets = new Set();
-
-const history = document.getElementById('historyList');
-
-history.innerHTML = '';
-
-const sorted = [...trades].sort((a,b)=>{
-const pa=a.date.split('/');
-const pb=b.date.split('/');
-const da = new Date('20'+pa[2], pa[1]-1, pa[0]);
-const db = new Date('20'+pb[2], pb[1]-1, pb[0]);
-return db-da;
-});
-
-const daily = {};
-
-sorted.forEach(t=>{
-
-total += t.profit;
-
-if(t.profit > 0) wins++;
-
-assets.add(t.asset);
-
-const parts = t.date.split('/');
-const dateKey = '20'+parts[2]+'-'+parts[1]+'-'+parts[0];
-
-if(!daily[dateKey]) daily[dateKey] = 0;
-
-daily[dateKey] += t.profit;
-
-const div = document.createElement('div');
-
-div.className = 'trade';
-
-div.innerHTML = `
-<button class="delete" onclick="deleteTrade('${t.docId}')">✕</button>
-
-<strong>${t.asset}</strong>
-
-<br><br>
-
-<span class="${t.profit >=0 ? 'green':'red'}">
-${t.profit >=0 ? '+' : ''}$${t.profit.toFixed(2)}
-</span>
-
-<br><br>
-
-${t.date}
-
-<br>
-
-<small>${t.notes}</small>
-`;
-
-history.appendChild(div);
-
-});
-
-document.getElementById('balance').innerText =
-'$' + total.toFixed(2);
-
-const totalProfit = trades.reduce((a,b)=>a+b.profit,0);
-
-const growth =
-totalDeposits > 0
-? ((totalProfit/totalDeposits)*100)
-: 0;
-
-document.getElementById('growth').innerText =
-(growth >=0 ? '+' : '') + growth.toFixed(1) + '%';
-
-document.getElementById('winrate').innerText =
-trades.length
-? ((wins/trades.length)*100).toFixed(0) + '%'
-: '0%';
-
-const dl = document.getElementById('assets');
-
-dl.innerHTML='';
-
-assets.forEach(a=>{
-const option = document.createElement('option');
-option.value = a;
-dl.appendChild(option);
-});
-
-drawCalendar(daily);
-drawChart();
-}
-
-function changeMonth(dir){
-
-currentMonth += dir;
-
-if(currentMonth < 0){
-currentMonth = 11;
-currentYear--;
-}
-
-if(currentMonth > 11){
-currentMonth = 0;
-currentYear++;
-}
-
-render();
-}
-
-function drawCalendar(daily){
-
-const calendar = document.getElementById('calendar');
-
-calendar.innerHTML='';
-
-document.getElementById('monthTitle').innerText =
-months[currentMonth] + ' ' + currentYear;
-
-let firstDay = new Date(currentYear,currentMonth,1).getDay();
-
-if(firstDay === 0) firstDay = 7;
-
-firstDay--;
-
-const daysInMonth =
-new Date(currentYear,currentMonth+1,0).getDate();
-
-for(let i=0;i<firstDay;i++){
-const empty = document.createElement('div');
-calendar.appendChild(empty);
-}
-
-for(let d=1; d<=daysInMonth; d++){
-
-const date =
-`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-
-const value = daily[date];
-
-const div = document.createElement('div');
-
-div.className = 'day';
-
-if(value > 0) div.classList.add('green-bg');
-if(value < 0) div.classList.add('red-bg');
-
-div.innerHTML = `
-<div class="day-number">${d}</div>
-
-<div class="day-profit">
-${value !== undefined
-? (value >= 0 ? '+' : '') + '$' + value.toFixed(0)
-: ''}
-</div>
-`;
-
-calendar.appendChild(div);
-}
-}
-
-
-let chart;
-
-function parseDate(str){
-const p = str.split('/');
-return new Date('20'+p[2], p[1]-1, p[0]);
-}
-
-function drawChart(){
-
-const ctx = document.getElementById('equityChart');
-
-if(chart){
-chart.destroy();
-}
-
-const events = [];
-
-deposits.forEach(d=>{
-events.push({
-date:d.date,
-amount:d.amount
-});
-});
-
-trades.forEach(t=>{
-events.push({
-date:t.date,
-amount:t.profit
-});
-});
-
-events.sort((a,b)=>parseDate(a.date)-parseDate(b.date));
-
-let balance = 0;
-
-const labels = [];
-const data = [];
-
-events.forEach(e=>{
-
-balance += e.amount;
-
-labels.push(e.date);
-data.push(balance);
-
-});
-
-chart = new Chart(ctx,{
-type:'line',
-data:{
-labels:labels,
-datasets:[{
-data:data,
-borderColor:'#374151',
-backgroundColor:'rgba(55,65,81,0.08)',
-fill:true,
-tension:0.4,
-borderWidth:3,
-pointRadius:3
-}]
-},
-options:{
-responsive:true,
-maintainAspectRatio:false,
-plugins:{
-legend:{
-display:false
-}
-},
-scales:{
-x:{
-ticks:{
-color:'#6b7280'
-},
-grid:{
-display:false
-}
-},
-y:{
-ticks:{
-color:'#6b7280',
-callback:function(value){
-return '$'+value;
-}
-},
-grid:{
-color:'rgba(0,0,0,0.05)'
-}
-}
-}
-}
-});
-
-}
-
-
-render();
-
-</script>
 
 </body>
 </html>
