@@ -168,29 +168,6 @@ String(d.getMonth()+1).padStart(2,'0') + '/' +
 String(d.getFullYear()).slice(-2);
 }
 
-
-window.editTrade = function(asset,profit,date,notes){
-
-showPage('add');
-
-document.getElementById('asset').value = asset;
-document.getElementById('profitInput').value = profit;
-document.getElementById('date').value = date;
-document.getElementById('notes').value = notes;
-
-}
-
-
-window.deleteTrade = async function(id){
-
-if(!confirm('Ištrinti sandorį?')) return;
-
-await deleteDoc(doc(db,'trades',id));
-
-await loadData();
-
-}
-
 window.showPage = function(id){
 document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
 document.getElementById(id).classList.add('active');
@@ -283,6 +260,15 @@ deposits.push(firstDeposit);
 render();
 }
 
+
+window.deleteTrade = async function(id){
+
+await deleteDoc(doc(db,'trades',id));
+
+await loadData();
+
+}
+
 function render(){
 
 const totalDeposits = deposits.reduce((a,b)=>a+b.amount,0);
@@ -304,24 +290,11 @@ const div = document.createElement('div');
 div.className='trade';
 
 div.innerHTML=`
-
-<div style="display:flex;justify-content:space-between;align-items:center;">
-
 <div style="display:flex;justify-content:space-between;align-items:center;">
 <strong>${t.asset}</strong>
-
-<div style="display:flex;gap:10px;align-items:center;">
-<button onclick="editTrade('${t.asset}','${t.profit}','${t.date}','${t.notes || ''}')" style="border:none;background:none;color:#374151;font-size:18px;">✎</button>
-
 <button onclick="deleteTrade('${t.docId}')" style="border:none;background:none;color:#ff2d55;font-size:18px;">✕</button>
 </div>
-
-</div>
-
-<button onclick="editTrade('${t.asset}','${t.profit}','${t.date}','${t.notes || ''}')" style="border:none;background:none;color:#374151;font-size:18px;">✎</button>
-</div>
-
-<br><br>
+<br>
 <span class="${t.profit >=0 ? 'green':'red'}">
 ${t.profit >=0 ? '+' : ''}$${t.profit.toFixed(2)}
 </span>
