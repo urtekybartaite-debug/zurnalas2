@@ -209,9 +209,17 @@ height:240px;
 }
 </style>
 
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+getFirestore,
+collection,
+addDoc,
+getDocs,
+deleteDoc,
+query
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBwQIZ4_VwOYJjGPXBIQ2cBuWa53v8xCUk",
@@ -226,8 +234,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-window.firebaseDB = db;
+window.db = db;
+window.fb = {
+collection,
+addDoc,
+getDocs,
+deleteDoc,
+query
+};
 </script>
+
 
 </head>
 <body>
@@ -335,8 +351,8 @@ window.firebaseDB = db;
 
 <script>
 
-let trades = JSON.parse(localStorage.getItem('trades') || '[]');
-let deposits = JSON.parse(localStorage.getItem('deposits') || '[]');
+let trades = [];
+let deposits = [];
 
 const now = new Date();
 
@@ -349,7 +365,7 @@ deposits.push({
 amount:150,
 date:'01/05/25'
 });
-localStorage.setItem('deposits', JSON.stringify(deposits));
+
 }
 
 const months = [
@@ -367,67 +383,6 @@ String(d.getFullYear()).slice(-2);
 
 document.getElementById('date').value = todayFormatted();
 
-async function migrateLocalDataToFirebase(){
-
-if(localStorage.getItem('firebaseMigrated')) return;
-
-if(!window.fb) return;
-
-try{
-
-for(const trade of trades){
-await fb.addDoc(fb.collection(db,'trades'), trade);
-}
-
-for(const dep of deposits){
-await fb.addDoc(fb.collection(db,'deposits'), dep);
-}
-
-localStorage.setItem('firebaseMigrated','yes');
-
-console.log('Migration done');
-
-}catch(e){
-console.log(e);
-}
-
-}
-
-async function loadFirebaseData(){
-
-if(!window.fb) return;
-
-try{
-
-const tradesSnapshot = await fb.getDocs(fb.collection(db,'trades'));
-const depositsSnapshot = await fb.getDocs(fb.collection(db,'deposits'));
-
-trades = [];
-deposits = [];
-
-tradesSnapshot.forEach((d)=>{
-trades.push(d.data());
-});
-
-depositsSnapshot.forEach((d)=>{
-deposits.push(d.data());
-});
-
-render();
-
-}catch(e){
-console.log(e);
-}
-
-}
-
-setTimeout(async ()=>{
-await migrateLocalDataToFirebase();
-await loadFirebaseData();
-},1000);
-
-
-
 function showPage(id){
 document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
 document.getElementById(id).classList.add('active');
@@ -437,67 +392,6 @@ document.getElementById('asset').value='';
 document.getElementById('profitInput').value='';
 document.getElementById('notes').value='';
 document.getElementById('date').value = todayFormatted();
-
-async function migrateLocalDataToFirebase(){
-
-if(localStorage.getItem('firebaseMigrated')) return;
-
-if(!window.fb) return;
-
-try{
-
-for(const trade of trades){
-await fb.addDoc(fb.collection(db,'trades'), trade);
-}
-
-for(const dep of deposits){
-await fb.addDoc(fb.collection(db,'deposits'), dep);
-}
-
-localStorage.setItem('firebaseMigrated','yes');
-
-console.log('Migration done');
-
-}catch(e){
-console.log(e);
-}
-
-}
-
-async function loadFirebaseData(){
-
-if(!window.fb) return;
-
-try{
-
-const tradesSnapshot = await fb.getDocs(fb.collection(db,'trades'));
-const depositsSnapshot = await fb.getDocs(fb.collection(db,'deposits'));
-
-trades = [];
-deposits = [];
-
-tradesSnapshot.forEach((d)=>{
-trades.push(d.data());
-});
-
-depositsSnapshot.forEach((d)=>{
-deposits.push(d.data());
-});
-
-render();
-
-}catch(e){
-console.log(e);
-}
-
-}
-
-setTimeout(async ()=>{
-await migrateLocalDataToFirebase();
-await loadFirebaseData();
-},1000);
-
-
 }
 }
 
@@ -514,14 +408,53 @@ String(now.getDate()).padStart(2,'0') + '/' +
 String(now.getMonth()+1).padStart(2,'0') + '/' +
 String(now.getFullYear()).slice(-2);
 
-deposits.push({
+const depositData = {
 amount:value,
 date:today
-});
+};
 
-localStorage.setItem('deposits', JSON.stringify(deposits));
+deposits.push(depositData);
+
+fb.addDoc(fb.collection(db,'deposits'), depositData);
+
+
 
 document.getElementById('depositInput').value='';
+
+async function loadCloudData(){
+
+const tradesSnapshot = await fb.getDocs(fb.collection(db,'trades'));
+const depositsSnapshot = await fb.getDocs(fb.collection(db,'deposits'));
+
+trades = [];
+deposits = [];
+
+tradesSnapshot.forEach((doc)=>{
+trades.push(doc.data());
+});
+
+depositsSnapshot.forEach((doc)=>{
+deposits.push(doc.data());
+});
+
+if(deposits.length===0){
+const firstDeposit = {
+amount:150,
+date:'01/05/25'
+};
+
+await fb.addDoc(fb.collection(db,'deposits'), firstDeposit);
+deposits.push(firstDeposit);
+}
+
+render();
+
+}
+
+window.addEventListener('load', ()=>{
+setTimeout(loadCloudData,500);
+});
+
 
 render();
 
@@ -543,7 +476,9 @@ notes: document.getElementById('notes').value
 
 trades.push(trade);
 
-localStorage.setItem('trades', JSON.stringify(trades));
+fb.addDoc(fb.collection(db,'trades'), trade);
+
+
 
 render();
 
@@ -552,7 +487,7 @@ showPage('home');
 
 function deleteTrade(id){
 trades = trades.filter(t=>t.id !== id);
-localStorage.setItem('trades', JSON.stringify(trades));
+
 render();
 }
 
