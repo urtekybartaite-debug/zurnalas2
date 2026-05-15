@@ -209,17 +209,9 @@ height:240px;
 }
 </style>
 
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-getFirestore,
-collection,
-addDoc,
-getDocs,
-deleteDoc,
-query
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBwQIZ4_VwOYJjGPXBIQ2cBuWa53v8xCUk",
@@ -234,16 +226,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-window.db = db;
-window.fb = {
-collection,
-addDoc,
-getDocs,
-deleteDoc,
-query
-};
+window.firebaseDB = db;
 </script>
-
 
 </head>
 <body>
@@ -351,8 +335,8 @@ query
 
 <script>
 
-let trades = [];
-let deposits = [];
+let trades = JSON.parse(localStorage.getItem('trades') || '[]');
+let deposits = JSON.parse(localStorage.getItem('deposits') || '[]');
 
 const now = new Date();
 
@@ -365,7 +349,7 @@ deposits.push({
 amount:150,
 date:'01/05/25'
 });
-
+localStorage.setItem('deposits', JSON.stringify(deposits));
 }
 
 const months = [
@@ -408,53 +392,14 @@ String(now.getDate()).padStart(2,'0') + '/' +
 String(now.getMonth()+1).padStart(2,'0') + '/' +
 String(now.getFullYear()).slice(-2);
 
-const depositData = {
+deposits.push({
 amount:value,
 date:today
-};
+});
 
-deposits.push(depositData);
-
-fb.addDoc(fb.collection(db,'deposits'), depositData);
-
-
+localStorage.setItem('deposits', JSON.stringify(deposits));
 
 document.getElementById('depositInput').value='';
-
-async function loadCloudData(){
-
-const tradesSnapshot = await fb.getDocs(fb.collection(db,'trades'));
-const depositsSnapshot = await fb.getDocs(fb.collection(db,'deposits'));
-
-trades = [];
-deposits = [];
-
-tradesSnapshot.forEach((doc)=>{
-trades.push(doc.data());
-});
-
-depositsSnapshot.forEach((doc)=>{
-deposits.push(doc.data());
-});
-
-if(deposits.length===0){
-const firstDeposit = {
-amount:150,
-date:'01/05/25'
-};
-
-await fb.addDoc(fb.collection(db,'deposits'), firstDeposit);
-deposits.push(firstDeposit);
-}
-
-render();
-
-}
-
-window.addEventListener('load', ()=>{
-setTimeout(loadCloudData,500);
-});
-
 
 render();
 
@@ -476,9 +421,7 @@ notes: document.getElementById('notes').value
 
 trades.push(trade);
 
-fb.addDoc(fb.collection(db,'trades'), trade);
-
-
+localStorage.setItem('trades', JSON.stringify(trades));
 
 render();
 
@@ -487,7 +430,7 @@ showPage('home');
 
 function deleteTrade(id){
 trades = trades.filter(t=>t.id !== id);
-
+localStorage.setItem('trades', JSON.stringify(trades));
 render();
 }
 
