@@ -131,6 +131,8 @@ getFirestore,
 collection,
 addDoc,
 getDocs,
+deleteDoc,
+doc,
 orderBy,
 query
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -232,7 +234,10 @@ const tradeSnapshot = await getDocs(tradeQuery);
 const depositSnapshot = await getDocs(depositQuery);
 
 tradeSnapshot.forEach(doc=>{
-trades.push(doc.data());
+trades.push({
+...doc.data(),
+docId: doc.id
+});
 });
 
 depositSnapshot.forEach(doc=>{
@@ -253,6 +258,15 @@ deposits.push(firstDeposit);
 }
 
 render();
+}
+
+
+window.deleteTrade = async function(id){
+
+await deleteDoc(doc(db,'trades',id));
+
+await loadData();
+
 }
 
 function render(){
@@ -276,8 +290,11 @@ const div = document.createElement('div');
 div.className='trade';
 
 div.innerHTML=`
+<div style="display:flex;justify-content:space-between;align-items:center;">
 <strong>${t.asset}</strong>
-<br><br>
+<button onclick="deleteTrade('${t.docId}')" style="border:none;background:none;color:#ff2d55;font-size:18px;">✕</button>
+</div>
+<br>
 <span class="${t.profit >=0 ? 'green':'red'}">
 ${t.profit >=0 ? '+' : ''}$${t.profit.toFixed(2)}
 </span>
