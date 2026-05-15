@@ -131,8 +131,6 @@ getFirestore,
 collection,
 addDoc,
 getDocs,
-deleteDoc,
-doc,
 orderBy,
 query
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -166,6 +164,18 @@ const d = new Date();
 return String(d.getDate()).padStart(2,'0') + '/' +
 String(d.getMonth()+1).padStart(2,'0') + '/' +
 String(d.getFullYear()).slice(-2);
+}
+
+
+window.editTrade = function(asset,profit,date,notes){
+
+showPage('add');
+
+document.getElementById('asset').value = asset;
+document.getElementById('profitInput').value = profit;
+document.getElementById('date').value = date;
+document.getElementById('notes').value = notes;
+
 }
 
 window.showPage = function(id){
@@ -234,10 +244,7 @@ const tradeSnapshot = await getDocs(tradeQuery);
 const depositSnapshot = await getDocs(depositQuery);
 
 tradeSnapshot.forEach(doc=>{
-trades.push({
-...doc.data(),
-docId: doc.id
-});
+trades.push(doc.data());
 });
 
 depositSnapshot.forEach(doc=>{
@@ -258,15 +265,6 @@ deposits.push(firstDeposit);
 }
 
 render();
-}
-
-
-window.deleteTrade = async function(id){
-
-await deleteDoc(doc(db,'trades',id));
-
-await loadData();
-
 }
 
 function render(){
@@ -290,11 +288,13 @@ const div = document.createElement('div');
 div.className='trade';
 
 div.innerHTML=`
+
 <div style="display:flex;justify-content:space-between;align-items:center;">
 <strong>${t.asset}</strong>
-<button onclick="deleteTrade('${t.docId}')" style="border:none;background:none;color:#ff2d55;font-size:18px;">✕</button>
+<button onclick="editTrade('${t.asset}','${t.profit}','${t.date}','${t.notes || ''}')" style="border:none;background:none;color:#374151;font-size:18px;">✎</button>
 </div>
-<br>
+
+<br><br>
 <span class="${t.profit >=0 ? 'green':'red'}">
 ${t.profit >=0 ? '+' : ''}$${t.profit.toFixed(2)}
 </span>
