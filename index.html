@@ -213,6 +213,7 @@ const db = getFirestore(app);
 
 let trades = [];
 let deposits = [];
+let withdrawals = [];
 
 let chart;
 
@@ -284,6 +285,27 @@ await loadData();
 document.getElementById('depositInput').value='';
 }
 
+
+window.saveWithdrawal = async function(){
+
+const value = parseFloat(document.getElementById('withdrawInput').value.replace(',','.'));
+
+if(isNaN(value)) return;
+
+const withdrawal = {
+amount:value,
+date:todayFormatted(),
+createdAt: Date.now()
+};
+
+await addDoc(collection(db,'withdrawals'), withdrawal);
+
+await loadData();
+
+document.getElementById('withdrawInput').value='';
+
+}
+
 function parseDate(str){
 const p = str.split('/');
 return new Date('20'+p[2], p[1]-1, p[0]);
@@ -293,12 +315,15 @@ async function loadData(){
 
 trades = [];
 deposits = [];
+withdrawals = [];
 
 const tradeQuery = query(collection(db,'trades'), orderBy('createdAt','desc'));
 const depositQuery = query(collection(db,'deposits'));
+const withdrawalQuery = query(collection(db,'withdrawals'));
 
 const tradeSnapshot = await getDocs(tradeQuery);
 const depositSnapshot = await getDocs(depositQuery);
+const withdrawalSnapshot = await getDocs(withdrawalQuery);
 
 tradeSnapshot.forEach(doc=>{
 trades.push({
@@ -309,6 +334,10 @@ docId: doc.id
 
 depositSnapshot.forEach(doc=>{
 deposits.push(doc.data());
+});
+
+withdrawalSnapshot.forEach(doc=>{
+withdrawals.push(doc.data());
 });
 
 if(deposits.length===0){
@@ -339,8 +368,9 @@ await loadData();
 function render(){
 
 const totalDeposits = deposits.reduce((a,b)=>a+b.amount,0);
+const totalWithdrawals = withdrawals.reduce((a,b)=>a+b.amount,0);
 
-let total = totalDeposits;
+let total = totalDeposits - totalWithdrawals;
 let wins = 0;
 
 const history = document.getElementById('historyList');
@@ -500,6 +530,13 @@ amount:d.amount
 });
 });
 
+withdrawals.forEach(w=>{
+events.push({
+date:w.date,
+amount:-w.amount
+});
+});
+
 trades.forEach(t=>{
 events.push({
 date:t.date,
@@ -617,6 +654,12 @@ await loadData();
 <div class="stat-title">Depozitas ($)</div>
 <input id="depositInput" placeholder="Įvesk depozitą">
 <button class="save-btn" onclick="saveDeposit()">Išsaugoti</button>
+</div>
+
+<div class="card">
+<div class="stat-title">Išėmimas ($)</div>
+<input id="withdrawInput" placeholder="Įvesk išėmimą">
+<button class="save-btn" onclick="saveWithdrawal()">Išsaugoti</button>
 </div>
 
 </div>
