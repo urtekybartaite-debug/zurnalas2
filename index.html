@@ -181,6 +181,28 @@ font-weight:700;
 font-size:11px;
 font-weight:700;
 }
+
+.screenshot-btn{
+margin-top:12px;
+display:flex;
+align-items:center;
+justify-content:center;
+width:52px;
+height:52px;
+border-radius:16px;
+border:1px solid #e5e7eb;
+background:#fafafa;
+font-size:28px;
+color:#374151;
+}
+
+.screenshot-preview{
+width:100%;
+border-radius:18px;
+margin-top:12px;
+display:none;
+}
+
 </style>
 
 <script type="module">
@@ -236,6 +258,36 @@ String(d.getMonth()+1).padStart(2,'0') + '/' +
 String(d.getFullYear()).slice(-2);
 }
 
+
+let screenshotBase64 = '';
+
+window.pickScreenshot = function(){
+document.getElementById('screenshotInput').click();
+}
+
+window.handleScreenshot = function(event){
+
+const file = event.target.files[0];
+
+if(!file) return;
+
+const reader = new FileReader();
+
+reader.onload = function(e){
+
+screenshotBase64 = e.target.result;
+
+const preview = document.getElementById('screenshotPreview');
+
+preview.src = screenshotBase64;
+preview.style.display = 'block';
+
+}
+
+reader.readAsDataURL(file);
+
+}
+
 window.showPage = function(id){
 document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
 document.getElementById(id).classList.add('active');
@@ -252,7 +304,8 @@ asset: document.getElementById('asset').value,
 profit: value,
 date: document.getElementById('date').value,
 notes: document.getElementById('notes').value,
-createdAt: Date.now()
+createdAt: Date.now(),
+screenshot:screenshotBase64
 };
 
 await addDoc(collection(db,'trades'), trade);
@@ -262,6 +315,10 @@ await loadData();
 document.getElementById('asset').value='';
 document.getElementById('profitInput').value='';
 document.getElementById('notes').value='';
+screenshotBase64 = '';
+
+const preview = document.getElementById('screenshotPreview');
+preview.style.display = 'none';
 
 showPage('home');
 }
@@ -275,7 +332,8 @@ if(isNaN(value)) return;
 const deposit = {
 amount:value,
 date:todayFormatted(),
-createdAt: Date.now()
+createdAt: Date.now(),
+screenshot:screenshotBase64
 };
 
 await addDoc(collection(db,'deposits'), deposit);
@@ -295,7 +353,8 @@ if(isNaN(value)) return;
 const withdrawal = {
 amount:value,
 date:todayFormatted(),
-createdAt: Date.now()
+createdAt: Date.now(),
+screenshot:screenshotBase64
 };
 
 await addDoc(collection(db,'withdrawals'), withdrawal);
@@ -345,7 +404,8 @@ if(deposits.length===0){
 const firstDeposit = {
 amount:150,
 date:'01/05/25',
-createdAt: Date.now()
+createdAt: Date.now(),
+screenshot:screenshotBase64
 };
 
 await addDoc(collection(db,'deposits'), firstDeposit);
@@ -399,6 +459,11 @@ ${t.profit >=0 ? '+' : ''}$${t.profit.toFixed(2)}
 ${t.date}
 <br>
 <small>${t.notes}</small>
+
+${t.screenshot
+? `<img src="${t.screenshot}" style="width:100%;border-radius:16px;margin-top:12px;">`
+: ''}
+
 `;
 
 history.appendChild(div);
@@ -677,6 +742,12 @@ await loadData();
 <input type="text" id="date" placeholder="dd/mm/yy">
 
 <textarea id="notes" placeholder="Pastabos"></textarea>
+
+<input type="file" id="screenshotInput" accept="image/*" onchange="handleScreenshot(event)" style="display:none;">
+
+<button class="screenshot-btn" onclick="pickScreenshot()">＋</button>
+
+<img id="screenshotPreview" class="screenshot-preview">
 
 <button class="save-btn" onclick="addTrade()">Išsaugoti</button>
 
