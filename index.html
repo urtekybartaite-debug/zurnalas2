@@ -630,6 +630,7 @@ function drawChart(){
     });
   });
 
+  // Chronologinis rikiavimas pagal įvedimo laiką
   events.sort((a,b)=>{
     const diff = (a.createdAt || 0) - (b.createdAt || 0);
     if(diff !== 0) return diff;
@@ -639,7 +640,6 @@ function drawChart(){
   let balance = 0;
   const labels = [];
   const data = [];
-  let shownYear = false;
   let lastSeenMonth = '';
 
   events.forEach((e, index)=>{
@@ -647,27 +647,18 @@ function drawChart(){
     const parts = (e.date || '').split('/');
     let labelText = '';
 
-    if(parts.length === 3){
+    if(index === 0){
+      // Pirmas taškas (nuo depozito) visada rodo metus: 2026
+      labelText = (parts.length === 3) ? ('20' + parts[2]) : '2026';
+    } else if(parts.length === 3){
       const month = parts[1];
-      const year = '20' + parts[2];
-
-      if(!shownYear){
-        // Pirmas įrašas (nuo depozito) užrašo metus: 2026
-        labelText = year;
-        shownYear = true;
-        lastSeenMonth = month;
-      } else if(month !== lastSeenMonth){
-        // Naujas mėnuo: užrašomas tik vieną kartą (pvz. 10)
+      // Jei tai pirmas šio mėnesio sandoris – parodome mėnesį (pvz. 09)
+      if(month !== lastSeenMonth){
         labelText = month;
         lastSeenMonth = month;
       } else {
-        // Tą patį mėnesį prie kitų sandorių nerašoma nieko
+        // Visiems kitiems to paties mėnesio sandoriams etiketė lieka tuščia
         labelText = '';
-      }
-    } else {
-      if(!shownYear){
-        labelText = '2026';
-        shownYear = true;
       }
     }
 
