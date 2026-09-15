@@ -3,223 +3,304 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Trading Journal Cloud</title>
+<title>Trading Journal</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+:root {
+  --bg-app: #f8fafc;
+  --card-bg: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --green: #10b981;
+  --green-bg: #ecfdf5;
+  --green-border: #a7f3d0;
+  --red: #f43f5e;
+  --red-bg: #fff1f2;
+  --red-border: #fecdd3;
+  --border: #e2e8f0;
+  --primary-btn: #0f172a;
+}
+
 *{margin:0;padding:0;box-sizing:border-box}
 
 body{
-font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-background:#f3f4f6;
-display:flex;
-justify-content:center;
-padding:18px;
-padding-bottom:100px;
-color:#111827;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg-app);
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  padding-bottom: 90px;
+  color: var(--text-main);
 }
 
 .app{
-width:100%;
-max-width:430px;
+  width: 100%;
+  max-width: 420px;
 }
 
 .page{display:none}
 .active{display:block}
 
 h1{
-font-size:32px;
-margin-bottom:18px;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin: 8px 0 16px 4px;
 }
 
 .card{
-background:white;
-border-radius:24px;
-padding:18px;
-margin-bottom:16px;
-box-shadow:0 4px 18px rgba(0,0,0,.05);
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 18px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
 }
 
 .stats{
-display:grid;
-grid-template-columns:1fr 1fr 1fr;
-gap:12px;
-margin-bottom:16px;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.stats .card{
+  padding: 14px 12px;
+  margin-bottom: 0;
 }
 
 .stat-title{
-font-size:13px;
-opacity:.55;
-margin-bottom:8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
 }
 
 .stat-value{
-font-size:23px;
-font-weight:700;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
-input,textarea{
-width:100%;
-padding:16px;
-border-radius:18px;
-border:1px solid #e5e7eb;
-background:#fafafa;
-font-size:16px;
-margin-top:12px;
+input, textarea{
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: #f8fafc;
+  font-size: 15px;
+  margin-top: 10px;
+  color: var(--text-main);
+  outline: none;
+  transition: all 0.2s;
+}
+
+input:focus, textarea:focus{
+  border-color: #94a3b8;
+  background: #fff;
 }
 
 textarea{
-min-height:100px;
-resize:none;
+  min-height: 90px;
+  resize: none;
 }
 
 .save-btn{
-width:100%;
-padding:16px;
-border:none;
-border-radius:18px;
-background:#374151;
-color:white;
-font-size:16px;
-font-weight:700;
-margin-top:14px;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  background: var(--primary-btn);
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 12px;
+  cursor: pointer;
+  transition: opacity 0.2s;
 }
 
-.trade{
-background:white;
-padding:16px;
-border-radius:20px;
-margin-bottom:12px;
-box-shadow:0 3px 10px rgba(0,0,0,.04);
+.save-btn:active{
+  opacity: 0.85;
 }
 
-.green{color:#16a34a;font-weight:700}
-.red{color:#c2185b;font-weight:700}
-
-.bottom{
-position:fixed;
-bottom:0;
-left:0;
-right:0;
-height:76px;
-background:white;
-display:flex;
-justify-content:space-around;
-align-items:center;
-box-shadow:0 -3px 16px rgba(0,0,0,.06);
-}
-
-.nav{
-background:none;
-border:none;
-color:#666;
-font-size:13px;
-}
-
-.chart-box{
-height:240px;
-padding:4px;
-background:white;
-}
-
+/* Kalendorius */
 .calendar-header{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
 }
 
 .arrow{
-background:none;
-border:none;
-font-size:24px;
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 10px;
 }
 
 .month{
-font-size:22px;
-font-weight:700;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .weekdays,
 .calendar{
-display:grid;
-grid-template-columns:repeat(7,1fr);
-gap:8px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
 }
 
 .weekdays div{
-text-align:center;
-font-size:12px;
-font-weight:700;
-opacity:.5;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding-bottom: 4px;
 }
 
 .day{
-aspect-ratio:1/1;
-border-radius:16px;
-padding:6px;
-display:flex;
-flex-direction:column;
-justify-content:space-between;
-background:white;
-box-shadow:0 2px 6px rgba(0,0,0,.03);
+  aspect-ratio: 1/1;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  transition: transform 0.15s;
 }
 
-.green-bg{
-background:#e8f8ec;
+.day.empty{
+  background: transparent;
+  border: none;
 }
 
-.red-bg{
-background:#ffe8f0;
+.green-day{
+  background: var(--green) !important;
+  color: #ffffff !important;
+  border-color: var(--green) !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
 }
 
-.day-number{
-font-size:14px;
-font-weight:700;
+.red-day{
+  background: var(--red) !important;
+  color: #ffffff !important;
+  border-color: var(--red) !important;
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.25);
 }
 
-.day-profit{
-font-size:11px;
-font-weight:700;
+/* Savaitės suvestinė */
+.weekly-wrap{
+  margin-top: 16px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 12px;
+}
+
+.weekly-row{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 4px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.weekly-profit{
+  font-weight: 700;
+}
+
+.green-txt{ color: var(--green); }
+.red-txt{ color: var(--red); }
+
+/* Grafikas */
+.chart-box{
+  height: 200px;
+  margin-top: 6px;
+}
+
+/* Sandorio kortelė istorijoje */
+.trade-card{
+  background: white;
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: 16px;
+  margin-bottom: 10px;
 }
 
 .screenshot-btn{
-margin-top:12px;
-display:flex;
-align-items:center;
-justify-content:center;
-width:52px;
-height:52px;
-border-radius:16px;
-border:1px solid #e5e7eb;
-background:#fafafa;
-font-size:28px;
-color:#374151;
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #f8fafc;
+  font-size: 20px;
+  cursor: pointer;
 }
 
 .screenshot-preview{
-width:100%;
-border-radius:18px;
-margin-top:12px;
-display:none;
+  width: 100%;
+  border-radius: 14px;
+  margin-top: 10px;
+  display: none;
 }
 
+/* Navigacija apačioje */
+.bottom-bar{
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 100;
+}
+
+.nav-btn{
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-btn.active{
+  color: var(--text-main);
+}
 </style>
 
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
 import {
-getFirestore,
-collection,
-addDoc,
-getDocs,
-deleteDoc,
-doc,
-orderBy,
-query
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  orderBy,
+  query
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -238,593 +319,411 @@ const db = getFirestore(app);
 let trades = [];
 let deposits = [];
 let withdrawals = [];
-
 let chart;
 
-
 const now = new Date();
-
 let currentMonth = now.getMonth();
 let currentYear = now.getFullYear();
 
 const months = [
-'Sausis','Vasaris','Kovas','Balandis',
-'Gegužė','Birželis','Liepa','Rugpjūtis',
-'Rugsėjis','Spalis','Lapkritis','Gruodis'
+  'Sausis','Vasaris','Kovas','Balandis',
+  'Gegužė','Birželis','Liepa','Rugpjūtis',
+  'Rugsėjis','Spalis','Lapkritis','Gruodis'
 ];
 
 function todayFormatted(){
-const d = new Date();
-return String(d.getDate()).padStart(2,'0') + '/' +
-String(d.getMonth()+1).padStart(2,'0') + '/' +
-String(d.getFullYear()).slice(-2);
+  const d = new Date();
+  return String(d.getDate()).padStart(2,'0') + '/' +
+         String(d.getMonth()+1).padStart(2,'0') + '/' +
+         String(d.getFullYear()).slice(-2);
 }
-
 
 let screenshotBase64 = '';
 
 window.pickScreenshot = function(){
-document.getElementById('screenshotInput').click();
-}
+  document.getElementById('screenshotInput').click();
+};
 
 window.handleScreenshot = function(event){
-
-const file = event.target.files[0];
-
-if(!file) return;
-
-const reader = new FileReader();
-
-reader.onload = function(e){
-
-screenshotBase64 = e.target.result;
-
-const preview = document.getElementById('screenshotPreview');
-
-preview.src = screenshotBase64;
-preview.style.display = 'block';
-
-}
-
-reader.readAsDataURL(file);
-
-}
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    screenshotBase64 = e.target.result;
+    const preview = document.getElementById('screenshotPreview');
+    preview.src = screenshotBase64;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+};
 
 window.showPage = function(id){
-document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-document.getElementById(id).classList.add('active');
-}
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+  if(event && event.currentTarget) event.currentTarget.classList.add('active');
+};
 
 window.addTrade = async function(){
+  const val = parseFloat(document.getElementById('profitInput').value.replace(',','.'));
+  if(isNaN(val)) return;
 
-const value = parseFloat(document.getElementById('profitInput').value.replace(',','.'));
+  const trade = {
+    asset: document.getElementById('asset').value.trim() || 'Sandoris',
+    profit: val,
+    date: document.getElementById('date').value.trim() || todayFormatted(),
+    notes: document.getElementById('notes').value.trim(),
+    createdAt: Date.now(),
+    screenshot: screenshotBase64
+  };
 
-if(isNaN(value)) return;
+  await addDoc(collection(db,'trades'), trade);
+  await loadData();
 
-const trade = {
-asset: document.getElementById('asset').value,
-profit: value,
-date: document.getElementById('date').value,
-notes: document.getElementById('notes').value,
-createdAt: Date.now(),
-screenshot:screenshotBase64
+  document.getElementById('asset').value = '';
+  document.getElementById('profitInput').value = '';
+  document.getElementById('notes').value = '';
+  screenshotBase64 = '';
+  document.getElementById('screenshotPreview').style.display = 'none';
+
+  showPage('home');
 };
-
-await addDoc(collection(db,'trades'), trade);
-
-await loadData();
-
-document.getElementById('asset').value='';
-document.getElementById('profitInput').value='';
-document.getElementById('notes').value='';
-screenshotBase64 = '';
-
-const preview = document.getElementById('screenshotPreview');
-preview.style.display = 'none';
-
-showPage('home');
-}
 
 window.saveDeposit = async function(){
+  const val = parseFloat(document.getElementById('depositInput').value.replace(',','.'));
+  if(isNaN(val)) return;
 
-const value = parseFloat(document.getElementById('depositInput').value.replace(',','.'));
+  await addDoc(collection(db,'deposits'), {
+    amount: val,
+    date: todayFormatted(),
+    createdAt: Date.now()
+  });
 
-if(isNaN(value)) return;
-
-const deposit = {
-amount:value,
-date:todayFormatted(),
-createdAt: Date.now(),
-screenshot:screenshotBase64
+  await loadData();
+  document.getElementById('depositInput').value = '';
 };
-
-await addDoc(collection(db,'deposits'), deposit);
-
-await loadData();
-
-document.getElementById('depositInput').value='';
-}
-
 
 window.saveWithdrawal = async function(){
+  const val = parseFloat(document.getElementById('withdrawInput').value.replace(',','.'));
+  if(isNaN(val)) return;
 
-const value = parseFloat(document.getElementById('withdrawInput').value.replace(',','.'));
+  await addDoc(collection(db,'withdrawals'), {
+    amount: val,
+    date: todayFormatted(),
+    createdAt: Date.now()
+  });
 
-if(isNaN(value)) return;
-
-const withdrawal = {
-amount:value,
-date:todayFormatted(),
-createdAt: Date.now(),
-screenshot:screenshotBase64
+  await loadData();
+  document.getElementById('withdrawInput').value = '';
 };
 
-await addDoc(collection(db,'withdrawals'), withdrawal);
-
-await loadData();
-
-document.getElementById('withdrawInput').value='';
-
-}
-
 function parseDate(str){
-const p = str.split('/');
-return new Date('20'+p[2], p[1]-1, p[0]);
+  const p = str.split('/');
+  return new Date('20'+p[2], p[1]-1, p[0]);
 }
 
 async function loadData(){
+  trades = [];
+  deposits = [];
+  withdrawals = [];
 
-trades = [];
-deposits = [];
-withdrawals = [];
+  const tradeQuery = query(collection(db,'trades'), orderBy('createdAt','desc'));
+  const depositQuery = query(collection(db,'deposits'));
+  const withdrawalQuery = query(collection(db,'withdrawals'));
 
-const tradeQuery = query(collection(db,'trades'), orderBy('createdAt','desc'));
-const depositQuery = query(collection(db,'deposits'));
-const withdrawalQuery = query(collection(db,'withdrawals'));
+  const [tSnap, dSnap, wSnap] = await Promise.all([
+    getDocs(tradeQuery),
+    getDocs(depositQuery),
+    getDocs(withdrawalQuery)
+  ]);
 
-const tradeSnapshot = await getDocs(tradeQuery);
-const depositSnapshot = await getDocs(depositQuery);
-const withdrawalSnapshot = await getDocs(withdrawalQuery);
+  tSnap.forEach(d => trades.push({ ...d.data(), docId: d.id }));
+  dSnap.forEach(d => deposits.push({ ...d.data(), docId: d.id }));
+  wSnap.forEach(d => withdrawals.push({ ...d.data(), docId: d.id }));
 
-tradeSnapshot.forEach(doc=>{
-trades.push({
-...doc.data(),
-docId: doc.id
-});
-});
-
-depositSnapshot.forEach(doc=>{
-deposits.push(doc.data());
-});
-
-withdrawalSnapshot.forEach(doc=>{
-withdrawals.push(doc.data());
-});
-
-if(deposits.length===0){
-
-const firstDeposit = {
-amount:150,
-date:'01/05/25',
-createdAt: Date.now(),
-screenshot:screenshotBase64
-};
-
-await addDoc(collection(db,'deposits'), firstDeposit);
-
-deposits.push(firstDeposit);
+  render();
 }
-
-render();
-}
-
 
 window.deleteTrade = async function(id){
-
-await deleteDoc(doc(db,'trades',id));
-
-await loadData();
-
-}
+  await deleteDoc(doc(db,'trades', id));
+  await loadData();
+};
 
 function render(){
+  const totalDeposits = deposits.reduce((a,b)=>a+b.amount,0);
+  const totalWithdrawals = withdrawals.reduce((a,b)=>a+b.amount,0);
+  const totalProfit = trades.reduce((a,b)=>a+b.profit,0);
+  const currentBalance = totalDeposits - totalWithdrawals + totalProfit;
 
-const totalDeposits = deposits.reduce((a,b)=>a+b.amount,0);
-const totalWithdrawals = withdrawals.reduce((a,b)=>a+b.amount,0);
+  let wins = 0;
+  const history = document.getElementById('historyList');
+  history.innerHTML = '';
 
-let total = totalDeposits - totalWithdrawals;
-let wins = 0;
+  trades.forEach(t=>{
+    if(t.profit > 0) wins++;
 
-const history = document.getElementById('historyList');
-history.innerHTML='';
+    const div = document.createElement('div');
+    div.className = 'trade-card';
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <strong style="font-size:16px;">${t.asset}</strong>
+        <button onclick="deleteTrade('${t.docId}')" style="border:none;background:none;color:#94a3b8;font-size:16px;cursor:pointer;">✕</button>
+      </div>
+      <div style="margin-top:6px;font-size:18px;font-weight:700;" class="${t.profit >= 0 ? 'green-txt' : 'red-txt'}">
+        ${t.profit >= 0 ? '+' : ''}$${t.profit.toFixed(2)}
+      </div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px;">${t.date}</div>
+      ${t.notes ? `<div style="font-size:13px;margin-top:8px;color:#334155;">${t.notes}</div>` : ''}
+      ${t.screenshot ? `<img src="${t.screenshot}" style="width:100%;border-radius:12px;margin-top:10px;">` : ''}
+    `;
+    history.appendChild(div);
+  });
 
-trades.forEach(t=>{
+  document.getElementById('balance').innerText = '$' + currentBalance.toFixed(2);
+  const growth = totalDeposits > 0 ? ((totalProfit/totalDeposits)*100) : 0;
+  document.getElementById('growth').innerText = (growth >= 0 ? '+' : '') + growth.toFixed(1) + '%';
+  document.getElementById('winrate').innerText = trades.length ? ((wins/trades.length)*100).toFixed(0) + '%' : '0%';
 
-total += t.profit;
+  const daily = {};
+  trades.forEach(t=>{
+    const parts = t.date.split('/');
+    const dateKey = '20'+parts[2]+'-'+parts[1]+'-'+parts[0];
+    if(!daily[dateKey]) daily[dateKey] = 0;
+    daily[dateKey] += t.profit;
+  });
 
-if(t.profit > 0) wins++;
-
-const div = document.createElement('div');
-
-div.className='trade';
-
-div.innerHTML=`
-<div style="display:flex;justify-content:space-between;align-items:center;">
-<strong>${t.asset}</strong>
-<button onclick="deleteTrade('${t.docId}')" style="border:none;background:none;color:#ff2d55;font-size:18px;">✕</button>
-</div>
-<br>
-<span class="${t.profit >=0 ? 'green':'red'}">
-${t.profit >=0 ? '+' : ''}$${t.profit.toFixed(2)}
-</span>
-<br><br>
-${t.date}
-<br>
-<small>${t.notes}</small>
-
-${t.screenshot
-? `<img src="${t.screenshot}" style="width:100%;border-radius:16px;margin-top:12px;">`
-: ''}
-
-`;
-
-history.appendChild(div);
-
-});
-
-document.getElementById('balance').innerText =
-'$'+total.toFixed(2);
-
-const totalProfit = trades.reduce((a,b)=>a+b.profit,0);
-
-const growth =
-totalDeposits > 0
-? ((totalProfit/totalDeposits)*100)
-: 0;
-
-document.getElementById('growth').innerText =
-(growth >=0 ? '+' : '') + growth.toFixed(1) + '%';
-
-document.getElementById('winrate').innerText =
-trades.length
-? ((wins/trades.length)*100).toFixed(0) + '%'
-: '0%';
-
-
-const daily = {};
-
-trades.forEach(t=>{
-
-const parts = t.date.split('/');
-const dateKey = '20'+parts[2]+'-'+parts[1]+'-'+parts[0];
-
-if(!daily[dateKey]) daily[dateKey] = 0;
-
-daily[dateKey] += t.profit;
-
-});
-
-drawCalendar(daily);
-
-drawChart();
-
+  drawCalendar(daily);
+  drawChart();
 }
-
 
 window.changeMonth = function(dir){
-
-currentMonth += dir;
-
-if(currentMonth < 0){
-currentMonth = 11;
-currentYear--;
-}
-
-if(currentMonth > 11){
-currentMonth = 0;
-currentYear++;
-}
-
-render();
-}
+  currentMonth += dir;
+  if(currentMonth < 0){
+    currentMonth = 11;
+    currentYear--;
+  }
+  if(currentMonth > 11){
+    currentMonth = 0;
+    currentYear++;
+  }
+  render();
+};
 
 function drawCalendar(daily){
+  const calendar = document.getElementById('calendar');
+  calendar.innerHTML = '';
+  document.getElementById('monthTitle').innerText = months[currentMonth] + ' ' + currentYear;
 
-const calendar = document.getElementById('calendar');
+  let firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  if(firstDay === 0) firstDay = 7;
+  firstDay--;
 
-calendar.innerHTML='';
+  const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
 
-document.getElementById('monthTitle').innerText =
-months[currentMonth] + ' ' + currentYear;
+  for(let i=0; i<firstDay; i++){
+    const empty = document.createElement('div');
+    empty.className = 'day empty';
+    calendar.appendChild(empty);
+  }
 
-let firstDay = new Date(currentYear,currentMonth,1).getDay();
+  const weeklyTotals = {};
 
-if(firstDay === 0) firstDay = 7;
+  for(let d=1; d<=daysInMonth; d++){
+    const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const value = daily[dateStr];
 
-firstDay--;
+    const weekIdx = Math.ceil((d + firstDay) / 7);
+    if(!weeklyTotals[weekIdx]) weeklyTotals[weekIdx] = 0;
+    if(value !== undefined) weeklyTotals[weekIdx] += value;
 
-const daysInMonth =
-new Date(currentYear,currentMonth+1,0).getDate();
+    const div = document.createElement('div');
+    div.className = 'day';
 
-for(let i=0;i<firstDay;i++){
-const empty = document.createElement('div');
-calendar.appendChild(empty);
+    // Švari spalva: tik žalia arba raudona, be sumos
+    if(value > 0) div.classList.add('green-day');
+    if(value < 0) div.classList.add('red-day');
+
+    div.innerText = d;
+    calendar.appendChild(div);
+  }
+
+  // Savaičių suvestinė
+  const weeklyContainer = document.getElementById('weeklySummary');
+  weeklyContainer.innerHTML = '';
+  Object.keys(weeklyTotals).forEach(w => {
+    const profit = weeklyTotals[w];
+    const row = document.createElement('div');
+    row.className = 'weekly-row';
+    row.innerHTML = `
+      <span>${w} savaitė</span>
+      <span class="weekly-profit ${profit >= 0 ? 'green-txt' : 'red-txt'}">
+        ${profit >= 0 ? '+' : ''}$${profit.toFixed(2)}
+      </span>
+    `;
+    weeklyContainer.appendChild(row);
+  });
 }
-
-for(let d=1; d<=daysInMonth; d++){
-
-const date =
-`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-
-const value = daily[date];
-
-const div = document.createElement('div');
-
-div.className = 'day';
-
-if(value > 0) div.classList.add('green-bg');
-if(value < 0) div.classList.add('red-bg');
-
-div.innerHTML = `
-<div class="day-number">${d}</div>
-
-<div class="day-profit">
-${value !== undefined
-? (value >= 0 ? '+' : '') + '$' + value.toFixed(0)
-: ''}
-</div>
-`;
-
-calendar.appendChild(div);
-}
-}
-
 
 function drawChart(){
+  const ctx = document.getElementById('equityChart');
+  if(chart) chart.destroy();
 
-const ctx = document.getElementById('equityChart');
+  const events = [];
+  deposits.forEach(d=>events.push({date:d.date, amount:d.amount}));
+  withdrawals.forEach(w=>events.push({date:w.date, amount:-w.amount}));
+  trades.forEach(t=>events.push({date:t.date, amount:t.profit}));
 
-if(chart){
-chart.destroy();
-}
+  events.sort((a,b)=>parseDate(a.date)-parseDate(b.date));
 
-const events = [];
+  let balance = 0;
+  const labels = [];
+  const data = [];
 
-deposits.forEach(d=>{
-events.push({
-date:d.date,
-amount:d.amount
-});
-});
+  events.forEach((e)=>{
+    balance += e.amount;
+    labels.push(e.date);
+    data.push(balance);
+  });
 
-withdrawals.forEach(w=>{
-events.push({
-date:w.date,
-amount:-w.amount
-});
-});
-
-trades.forEach(t=>{
-events.push({
-date:t.date,
-amount:t.profit
-});
-});
-
-events.sort((a,b)=>parseDate(a.date)-parseDate(b.date));
-
-let balance = 0;
-
-const labels = [];
-const data = [];
-
-const monthIndexes = {};
-
-events.forEach((e,index)=>{
-
-balance += e.amount;
-
-const parts = e.date.split('/');
-
-const monthLabel = parts[1] + '/' + parts[2];
-
-if(monthIndexes[monthLabel] === undefined){
-monthIndexes[monthLabel] = index;
-}
-
-labels.push('');
-
-data.push(balance);
-
-});
-
-Object.keys(monthIndexes).forEach((month,i)=>{
-if(i !== 0){
-labels[monthIndexes[month]] = month;
-}
-});
-
-chart = new Chart(ctx,{
-type:'line',
-data:{
-labels:labels,
-datasets:[{
-data:data,
-borderColor:'#64748b',
-backgroundColor:'rgba(148,163,184,0.18)',
-fill:true,
-tension:0.4,
-borderWidth:1.2,
-pointRadius:0,
-pointHoverRadius:0
-}]
-},
-options:{
-responsive:true,
-maintainAspectRatio:false,
-plugins:{
-legend:{display:false}
-},
-scales:{
-x:{
-ticks:{
-maxRotation:0,
-minRotation:0,
-autoSkip:true,
-maxTicksLimit:8,
-padding:10,
-font:{
-size:11
-},
-callback:function(value,index,ticks){
-const label = this.getLabelForValue(value);
-return label === '' ? null : label;
-}
-},
-grid:{
-display:false,
-drawBorder:false
-}
-},
-y:{
-grid:{
-display:true,
-color:'rgba(148,163,184,0.18)',
-borderDash:[2,6],
-drawBorder:false
-},
-ticks:{
-padding:10
-}
-}
-}
-}
-});
-
+  chart = new Chart(ctx,{
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: data,
+        borderColor: '#0ea5e9',
+        backgroundColor: 'rgba(14, 165, 233, 0.08)',
+        fill: true,
+        tension: 0.25,
+        borderWidth: 2,
+        pointRadius: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { display: false },
+        y: {
+          grid: { color: 'rgba(226, 232, 240, 0.8)', borderDash: [3, 3], drawBorder: false },
+          ticks: { font: { size: 11 } }
+        }
+      }
+    }
+  });
 }
 
 window.onload = async ()=>{
-
-document.getElementById('date').value = todayFormatted();
-
-await loadData();
-
-}
-
+  document.getElementById('date').value = todayFormatted();
+  await loadData();
+};
 </script>
-
 </head>
 <body>
 
 <div class="app">
 
-<div id="home" class="page active">
+  <!-- PAGRINDINIS PUSLAPIS -->
+  <div id="home" class="page active">
+    <h1>Prekybos Žurnalas</h1>
 
-<h1>Žurnalas</h1>
+    <div class="stats">
+      <div class="card">
+        <div class="stat-title">Balansas</div>
+        <div class="stat-value" id="balance">$0.00</div>
+      </div>
+      <div class="card">
+        <div class="stat-title">Growth</div>
+        <div class="stat-value" id="growth">0%</div>
+      </div>
+      <div class="card">
+        <div class="stat-title">Winrate</div>
+        <div class="stat-value" id="winrate">0%</div>
+      </div>
+    </div>
 
-<div class="stats">
+    <!-- Kalendoriaus kortelė -->
+    <div class="card">
+      <div class="calendar-header">
+        <button class="arrow" onclick="changeMonth(-1)">‹</button>
+        <div id="monthTitle" class="month"></div>
+        <button class="arrow" onclick="changeMonth(1)">›</button>
+      </div>
 
-<div class="card">
-<div class="stat-title">Balansas</div>
-<div class="stat-value" id="balance">$0</div>
-</div>
+      <div class="weekdays">
+        <div>P</div><div>A</div><div>T</div><div>K</div><div>Pn</div><div>Š</div><div>S</div>
+      </div>
 
-<div class="card">
-<div class="stat-title">Growth</div>
-<div class="stat-value" id="growth">0%</div>
-</div>
+      <div id="calendar" class="calendar"></div>
 
-<div class="card">
-<div class="stat-title">Winrate</div>
-<div class="stat-value" id="winrate">0%</div>
-</div>
+      <div class="weekly-wrap">
+        <div class="stat-title">Savaičių rezultatai</div>
+        <div id="weeklySummary"></div>
+      </div>
+    </div>
 
-</div>
+    <!-- Balanso grafikas -->
+    <div class="card">
+      <div class="stat-title">Balanso dinamika</div>
+      <div class="chart-box">
+        <canvas id="equityChart"></canvas>
+      </div>
+    </div>
 
-<div class="card">
+    <!-- Depozitas -->
+    <div class="card">
+      <div class="stat-title">Įnešti depozitą ($)</div>
+      <input id="depositInput" type="number" step="any" placeholder="Suma">
+      <button class="save-btn" onclick="saveDeposit()">Išsaugoti depozitą</button>
+    </div>
 
-<div class="calendar-header">
-<button class="arrow" onclick="changeMonth(-1)">‹</button>
-<div id="monthTitle" class="month"></div>
-<button class="arrow" onclick="changeMonth(1)">›</button>
-</div>
+    <!-- Išėmimas -->
+    <div class="card">
+      <div class="stat-title">Registruoti išėmimą ($)</div>
+      <input id="withdrawInput" type="number" step="any" placeholder="Suma">
+      <button class="save-btn" onclick="saveWithdrawal()">Išsaugoti išėmimą</button>
+    </div>
+  </div>
 
-<div class="weekdays">
-<div>P</div>
-<div>A</div>
-<div>T</div>
-<div>K</div>
-<div>Pn</div>
-<div>Š</div>
-<div>S</div>
-</div>
+  <!-- SANDORIO PRIDĖJIMAS -->
+  <div id="add" class="page">
+    <h1>Naujas sandoris</h1>
+    <div class="card">
+      <input id="asset" placeholder="Instrumentas (pvz. EURUSD, XAUUSD)">
+      <input id="profitInput" placeholder="Pelnas / Nuostolis ($) (pvz. 120 arba -45)">
+      <input type="text" id="date" placeholder="dd/mm/yy">
+      <textarea id="notes" placeholder="Sandorio pastabos / strategija"></textarea>
+      
+      <input type="file" id="screenshotInput" accept="image/*" onchange="handleScreenshot(event)" style="display:none;">
+      <button class="screenshot-btn" onclick="pickScreenshot()">📷</button>
+      <img id="screenshotPreview" class="screenshot-preview">
 
-<div id="calendar" class="calendar"></div>
+      <button class="save-btn" onclick="addTrade()">Išsaugoti sandorį</button>
+    </div>
+  </div>
 
-</div>
+  <!-- ISTORIJA -->
+  <div id="history" class="page">
+    <h1>Sandorių istorija</h1>
+    <div id="historyList"></div>
+  </div>
 
-<div class="card">
-<div class="stat-title">Balanso grafikas</div>
-
-<div class="chart-box">
-<canvas id="equityChart"></canvas>
-</div>
-
-</div>
-
-<div class="card">
-<div class="stat-title">Depozitas ($)</div>
-<input id="depositInput" placeholder="Įvesk depozitą">
-<button class="save-btn" onclick="saveDeposit()">Išsaugoti</button>
-</div>
-
-<div class="card">
-<div class="stat-title">Išėmimas ($)</div>
-<input id="withdrawInput" placeholder="Įvesk išėmimą">
-<button class="save-btn" onclick="saveWithdrawal()">Išsaugoti</button>
-</div>
-
-</div>
-
-<div id="add" class="page">
-
-<h1>Pridėti sandorį</h1>
-
-<div class="card">
-
-<input id="asset" placeholder="Asset">
-
-<input id="profitInput" placeholder="Pelnas / Nuostolis ($)">
-
-<input type="text" id="date" placeholder="dd/mm/yy">
-
-<textarea id="notes" placeholder="Pastabos"></textarea>
-
-<input type="file" id="screenshotInput" accept="image/*" onchange="handleScreenshot(event)" style="display:none;">
-
-<button class="screenshot-btn" onclick="pickScreenshot()">＋</button>
-
-<img id="screenshotPreview" class="screenshot-preview">
-
-<button class="save-btn" onclick="addTrade()">Išsaugoti</button>
-
-</div>
-
-</div>
-
-<div id="history" class="page">
-
-<h1>History</h1>
-
-<div id="historyList"></div>
-
-</div>
-
-<div class="bottom">
-<button class="nav" onclick="showPage('home')">🏠 Home</button>
-<button class="nav" onclick="showPage('add')">➕ Add</button>
-<button class="nav" onclick="showPage('history')">📊 History</button>
-</div>
+  <!-- NAVIGACIJA APAČIOJE -->
+  <div class="bottom-bar">
+    <button class="nav-btn active" onclick="showPage('home')">
+      <span>🏠</span>
+      <span>Pradžia</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('add')">
+      <span>➕</span>
+      <span>Sandoris</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('history')">
+      <span>📊</span>
+      <span>Istorija</span>
+    </button>
+  </div>
 
 </div>
 
