@@ -598,7 +598,6 @@ function drawCalendar(daily){
   });
 }
 
-// ORIGINALUS GRAFIKAS IŠ PIRMOJO KODO SU TIKSLIU CHRONOLOGINIU RIKIAVIMU
 function drawChart(){
   const ctx = document.getElementById('equityChart');
   if(chart){
@@ -641,25 +640,35 @@ function drawChart(){
   let balance = 0;
   const labels = [];
   const data = [];
-  const monthIndexes = {};
+  let lastYear = '';
 
   events.forEach((e, index)=>{
     balance += e.amount;
-    const parts = (e.date || '').split('/');
-    if(parts.length === 3){
-      const monthLabel = parts[1] + '/' + parts[2];
-      if(monthIndexes[monthLabel] === undefined){
-        monthIndexes[monthLabel] = index;
-      }
-    }
-    labels.push('');
-    data.push(balance);
-  });
+    const parts = (e.date || '').split('/'); // dd, mm, yy
+    let labelText = '';
 
-  Object.keys(monthIndexes).forEach((month, i)=>{
-    if(i !== 0){
-      labels[monthIndexes[month]] = month;
+    if(parts.length === 3){
+      const month = parts[1];
+      const year = '20' + parts[2];
+
+      if(index === 0){
+        // Pirmas taškas (nuo depozito) rodo metus: 2026
+        labelText = year;
+        lastYear = year;
+      } else if(year !== lastYear){
+        // Jei sueina nauji metai, parašomi metai
+        labelText = year;
+        lastYear = year;
+      } else {
+        // Paprastiems taškams rodomas tik mėnuo (pvz. 09)
+        labelText = month;
+      }
+    } else {
+      labelText = index === 0 ? '2026' : '';
     }
+
+    labels.push(labelText);
+    data.push(balance);
   });
 
   chart = new Chart(ctx,{
@@ -691,11 +700,7 @@ function drawChart(){
             autoSkip: true,
             maxTicksLimit: 8,
             padding: 10,
-            font: { size: 11 },
-            callback: function(value, index, ticks){
-              const label = this.getLabelForValue(value);
-              return label === '' ? null : label;
-            }
+            font: { size: 11 }
           },
           grid:{
             display: false,
@@ -728,7 +733,6 @@ window.onload = async ()=>{
 
 <div class="app">
 
-  <!-- PAGRINDINIS PUSLAPIS -->
   <div id="home" class="page active">
     <h1>Žurnalas</h1>
 
@@ -747,7 +751,6 @@ window.onload = async ()=>{
       </div>
     </div>
 
-    <!-- Kalendoriaus kortelė -->
     <div class="card">
       <div class="calendar-header">
         <button class="arrow" onclick="changeMonth(-1)">‹</button>
@@ -767,7 +770,6 @@ window.onload = async ()=>{
       </div>
     </div>
 
-    <!-- Balanso dinamika (originali išvaizda) -->
     <div class="card">
       <div class="stat-title">Balanso grafikas</div>
       <div class="chart-box">
@@ -775,14 +777,12 @@ window.onload = async ()=>{
       </div>
     </div>
 
-    <!-- Depozitas -->
     <div class="card">
       <div class="stat-title">Depozitas ($)</div>
       <input id="depositInput" type="number" step="any" placeholder="Suma">
       <button class="save-btn" onclick="saveDeposit()">Išsaugoti depozitą</button>
     </div>
 
-    <!-- Išėmimas -->
     <div class="card">
       <div class="stat-title">Išėmimas ($)</div>
       <input id="withdrawInput" type="number" step="any" placeholder="Suma">
@@ -790,7 +790,6 @@ window.onload = async ()=>{
     </div>
   </div>
 
-  <!-- SANDORIO PRIDĖJIMAS -->
   <div id="add" class="page">
     <h1>Naujas sandoris</h1>
     <div class="card">
@@ -811,13 +810,11 @@ window.onload = async ()=>{
     </div>
   </div>
 
-  <!-- ISTORIJA -->
   <div id="history" class="page">
     <h1>Sandorių istorija</h1>
     <div id="historyList"></div>
   </div>
 
-  <!-- APAČIOS NAVIGACIJA -->
   <div class="bottom-bar">
     <button class="nav-btn active" onclick="showPage('home')">
       <span>🏠</span>
